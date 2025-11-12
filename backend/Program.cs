@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using DotNetEnv;
+using MedicalDemo;
 using MedicalDemo.Interfaces;
 using MedicalDemo.Models;
 using MedicalDemo.Services;
@@ -131,5 +132,8 @@ using (IServiceScope scope = app.Services.CreateScope())
         DatabaseSeeder.Seed(db);
     }
 }
+
+Pgy4CalendarTest.Run();
+
 
 app.Run();
