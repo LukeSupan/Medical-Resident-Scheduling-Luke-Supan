@@ -9,7 +9,7 @@ namespace MedicalDemo.Algorithm
     {
         public Dictionary<string, Dictionary<string, string>> Schedule { get; private set; }
 
-        private Dictionary<string, List<string>> ElectivePreferences;
+        private readonly Dictionary<string, List<string>> ElectivePreferences;
 
         public PGY4Calendar(List<Residents> residents)
         {
@@ -23,7 +23,9 @@ namespace MedicalDemo.Algorithm
 
             Schedule = new Dictionary<string, Dictionary<string, string>>();
             foreach (var r in pgy4s)
+            {
                 Schedule[$"{r.first_name} {r.last_name}"] = months.ToDictionary(m => m, m => "");
+            }
 
             // Mock form submissions
             ElectivePreferences = new Dictionary<string, List<string>>
@@ -35,19 +37,28 @@ namespace MedicalDemo.Algorithm
                 { "Eve Black",   new List<string> { "Intp Psy", "TMS", "IOP", "Chief", "VA", "HPC", "Addiction", "Forensic" } }
             };
 
-            // Track how many residents are assigned to each task per month
-            var monthTaskCount = months.ToDictionary(m => m, m => new Dictionary<string, int>());
-            foreach (var month in months)
+            // example of tracking how many residents are assigned to a task each month
+            // in the final version each task has different rules, and we'll need to compare with pgy2 schedules as well
+            // for now we just only allow two per month
+            Dictionary<string, Dictionary<string, int>> monthTaskCount = months.ToDictionary(m => m, m => new Dictionary<string, int>());
+            foreach (string month in months)
+            {
                 monthTaskCount[month] = new Dictionary<string, int>();
+            }
 
-            // Track how many times each resident has been assigned each task
-            var residentTaskCount = pgy4s.ToDictionary(
+            // track how many times each resident has been assigned each task. if the task has a higher priority this will be higher
+            // each task has a limit of how many times they are allowed and required. all residents have to do two months of certain tasks so this will be important
+            Dictionary<string, Dictionary<string, int>> residentTaskCount = pgy4s.ToDictionary(
                 r => $"{r.first_name} {r.last_name}",
                 r => new Dictionary<string, int>());
 
-            foreach (var resident in pgy4s)
-                foreach (var task in ElectivePreferences[$"{resident.first_name} {resident.last_name}"])
+            foreach (Residents resident in pgy4s)
+            {
+                foreach (string task in ElectivePreferences[$"{resident.first_name} {resident.last_name}"])
+                {
                     residentTaskCount[$"{resident.first_name} {resident.last_name}"][task] = 0;
+                }
+            }
 
             // Assign month-by-month
             foreach (var month in months)
@@ -65,13 +76,20 @@ namespace MedicalDemo.Algorithm
                         (!monthTaskCount[month].ContainsKey(task) || monthTaskCount[month][task] < 3)
                     );
 
-                    if (assigned == null) assigned = "Elective"; // fallback
+                    if (assigned == null)
+                    {
+                        assigned = "Elective"; // fallback
+                    }
 
                     Schedule[name][month] = assigned;
 
                     // Update counters
                     residentTaskCount[name][assigned]++;
-                    if (!monthTaskCount[month].ContainsKey(assigned)) monthTaskCount[month][assigned] = 0;
+                    if (!monthTaskCount[month].ContainsKey(assigned))
+                    {
+                        monthTaskCount[month][assigned] = 0;
+                    }
+
                     monthTaskCount[month][assigned]++;
                 }
             }
@@ -79,11 +97,14 @@ namespace MedicalDemo.Algorithm
 
         public void PrintSchedule()
         {
-            foreach (var resident in Schedule)
+            foreach (KeyValuePair<string, Dictionary<string, string>> resident in Schedule)
             {
                 Console.WriteLine($"--- {resident.Key} ---");
-                foreach (var month in resident.Value)
+                foreach (KeyValuePair<string, string> month in resident.Value)
+                {
                     Console.WriteLine($"{month.Key}: {month.Value}");
+                }
+
                 Console.WriteLine();
             }
         }
